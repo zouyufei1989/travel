@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>天津旅游 · 景点地图与行程</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'Noto Sans SC', -apple-system, sans-serif;
+      background: #0f1419;
+      color: #e6edf3;
+    }
+
+    .app {
+      display: flex;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .map-wrap {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .sidebar {
+      width: 420px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+      border-left: 1px solid #30363d;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+      background: #161b22;
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #58a6ff;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #21262d;
+      color: #8b949e;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      background: #30363d;
+      color: #e6edf3;
+    }
+
+    .tab.active {
+      background: #238636;
+      color: #fff;
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .list-section h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #8b949e;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .place-card {
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .place-card:hover {
+      border-color: #58a6ff;
+      background: #161b22;
+    }
+
+    .place-card.highlight {
+      border-color: #238636;
+      background: rgba(35, 134, 54, 0.15);
+    }
+
+    .place-card .name {
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 6px;
+    }
+
+    .place-card .tip {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .place-card .address {
+      font-size: 0.8rem;
+      color: #6e7681;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .place-card .child-booking {
+      font-size: 0.8rem;
+      color: #58a6ff;
+      margin-top: 6px;
+      line-height: 1.4;
+      padding: 6px 8px;
+      background: rgba(88, 166, 255, 0.08);
+      border-radius: 6px;
+      border-left: 2px solid #58a6ff;
+    }
+
+    .place-card .book-date {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #7ee787;
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: rgba(35, 134, 54, 0.15);
+      border-radius: 6px;
+      border-left: 2px solid #238636;
+    }
+
+    .itinerary-section {
+      display: none;
+    }
+
+    .itinerary-section.show {
+      display: block;
+    }
+
+    .day-block {
+      margin-bottom: 20px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #21262d;
+      border: 1px solid #30363d;
+    }
+
+    .day-block h3 {
+      font-size: 1rem;
+      color: #58a6ff;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .day-block .time {
+      color: #8b949e;
+      font-size: 0.8rem;
+      margin-right: 8px;
+    }
+
+    .day-block .segment {
+      margin: 10px 0;
+      padding: 10px 12px;
+      background: #0d1117;
+      border-radius: 8px;
+      border-left: 3px solid #238636;
+    }
+
+    .day-block .segment-taxi {
+      font-size: 0.85rem;
+      color: #58a6ff;
+      margin-top: 4px;
+    }
+
+    .day-block .segment-visit {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-top: 2px;
+    }
+
+    .day-block .segment-dining {
+      font-size: 0.85rem;
+      color: #a371f7;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed #30363d;
+    }
+
+    .day-block .segment-stroller {
+      font-size: 0.8rem;
+      color: #7ee787;
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: rgba(126, 231, 135, 0.1);
+      border-radius: 6px;
+      border-left: 2px solid #238636;
+    }
+
+    .itinerary-intro {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .day-block {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .day-block:hover {
+      background: #1a1f26;
+    }
+
+    .day-block.route-active {
+      box-shadow: 0 0 0 2px #238636;
+      background: rgba(35, 134, 54, 0.12);
+    }
+
+    .day-block .day-route-hint {
+      font-size: 0.75rem;
+      color: #58a6ff;
+      margin-top: 6px;
+    }
+
+    .day-block .day-total-taxi {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #58a6ff;
+      margin: 8px 0 10px 0;
+      padding: 8px 10px;
+      background: rgba(88, 166, 255, 0.12);
+      border-radius: 6px;
+      border-left: 3px solid #58a6ff;
+    }
+
+    .transit-section {
+      display: none;
+    }
+
+    .transit-section.show {
+      display: block;
+    }
+
+    .transit-day {
+      margin-bottom: 20px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #21262d;
+      border: 1px solid #30363d;
+    }
+
+    .transit-day h3 {
+      font-size: 1rem;
+      color: #58a6ff;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .transit-segment {
+      margin: 10px 0;
+      padding: 10px 12px;
+      background: #0d1117;
+      border-radius: 8px;
+      border-left: 3px solid #a371f7;
+    }
+
+    .transit-segment .segment-title {
+      font-size: 0.9rem;
+      color: #e6edf3;
+      margin-bottom: 6px;
+    }
+
+    .transit-segment .segment-route {
+      font-size: 0.85rem;
+      color: #8b949e;
+      line-height: 1.6;
+    }
+
+    .transit-segment .segment-route .walk {
+      color: #58a6ff;
+    }
+
+    .transit-segment .segment-route .transfer {
+      color: #f0883e;
+    }
+
+    .transit-segment .segment-route .line {
+      color: #a371f7;
+    }
+
+    .transit-segment .segment-note {
+      font-size: 0.8rem;
+      color: #6e7681;
+      margin-top: 6px;
+    }
+
+    .transit-day-total {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #a371f7;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      background: rgba(163, 113, 247, 0.12);
+      border-radius: 6px;
+      border-left: 3px solid #a371f7;
+    }
+
+    .transit-intro {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .api-hint {
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: #1f2937;
+      border: 1px solid #374151;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .api-hint a {
+      color: #58a6ff;
+    }
+
+    .BMap_label .marker-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .BMap_label .marker-label {
+      background: #1a1f26;
+      color: #e6edf3;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      border: 1px solid #30363d;
+      margin-bottom: 4px;
+    }
+
+    .BMap_label .marker-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #238636;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .bmap-marker-label {
+      background: #fff !important;
+      color: #000 !important;
+      border: 3px solid #238636 !important;
+      padding: 8px 16px !important;
+      border-radius: 8px !important;
+      font-size: 17px !important;
+      font-weight: 800 !important;
+      white-space: nowrap !important;
+      max-width: 220px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4) !important;
+      letter-spacing: 0.04em !important;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+    }
+
+    @keyframes marker-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .bmap-marker-label-bounce {
+      animation: marker-bounce 0.7s ease-in-out infinite !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="map-wrap">
+      <div id="map"></div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1>天津景点 · 地图与行程</h1>
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="list">景点列表</button>
+          <button type="button" class="tab" data-tab="itinerary">行程安排</button>
+          <button type="button" class="tab" data-tab="transit">地铁/公交</button>
+          <button type="button" class="tab" data-tab="backup">备选</button>
+        </div>
+      </div>
+      <div class="sidebar-body">
+        <div class="api-hint">
+          使用百度地图展示。请在百度地图开放平台申请 <a href="https://lbs.baidu.com/apiconsole/key" target="_blank">AK（密钥）</a>，并在本页底部填入后刷新。
+        </div>
+        <div id="listPanel" class="list-section">
+          <h2>景点列表（点击可定位地图）</h2>
+          <div id="placeList"></div>
+        </div>
+        <div id="itineraryPanel" class="itinerary-section">
+          <h2>行程安排 2月18日–22日（地铁+打车，带四岁娃）</h2>
+          <p class="itinerary-intro">2月18日下午 14:00 抵天津站，入住汉庭酒店(天津海光寺地铁站店)；2月22日中午飞机返大连。不租车，以地铁+打车为主。行程按四岁娃节奏安排：每天 1–2 个点、午休/早回，兼顾亲子场馆与户外。</p>
+          <div class="drive-advice" style="border-left-color:#58a6ff;background:rgba(88,166,255,0.08);">
+            <strong>带四岁娃：建议带轻便遛娃神器</strong>
+            <ul>
+              <li>博物馆、街区步行多，轻便推车省力；多数场馆可推车入内。</li>
+              <li>天津之眼摩天轮、海洋馆等需排队，可折叠款便于收纳。</li>
+              <li>就餐推荐：老字号、现做、干净、对娃友好；以下为口碑较好的津味与简餐。</li>
+            </ul>
+          </div>
+          <div id="itineraryContent"></div>
+        </div>
+        <div id="transitPanel" class="transit-section" style="display:none;">
+          <h2>地铁/公交出行攻略</h2>
+          <p class="transit-intro">天津地铁 1、2、3 号线覆盖市区主要景点；海光寺站为 1 号线，天津站可换乘 2/3/9 号线，滨海国际机场为 2 号线终点。按日整理线路与步行距离（约米），以站内标识为准。</p>
+          <div id="transitContent"></div>
+        </div>
+        <div id="backupPanel" class="list-section" style="display:none;">
+          <h2>备选景点（点击可定位地图）</h2>
+          <p class="itinerary-intro" style="margin-bottom:12px;">以下为备选，未列入主行程，有时间可自行安排。</p>
+          <div id="backupList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var BAIDU_AK = '6l5KJ2sUN5ZZay0xUZfiwmIsUGSE450O';
+  </script>
+  <script>
+    (function () {
+      var BAIDU_AK = window.BAIDU_AK || '6l5KJ2sUN5ZZay0xUZfiwmIsUGSE450O';
+      var places = [
+        '天津站',
+        '汉庭酒店(天津海光寺地铁站店)',
+        '天津古文化街',
+        '天津之眼',
+        '意大利风情街',
+        '天津博物馆',
+        '天津自然博物馆',
+        '天津科技馆',
+        '水上公园',
+        '天津动物园',
+        '国家海洋博物馆',
+        '天津海昌极地海洋公园',
+        '周恩来邓颖超纪念馆',
+        '滨海国际机场'
+      ];
+
+      var optionalPlaces = [
+        '五大道',
+        '瓷房子',
+        '天津图书馆(滨海新区)',
+        '津湾广场'
+      ];
+
+      var placeAddresses = {
+        '天津站': '天津市河北区新纬路1号',
+        '汉庭酒店(天津海光寺地铁站店)': '天津市南开区万德庄大街1号',
+        '天津古文化街': '天津市南开区通北路古文化街',
+        '天津之眼': '天津市河北区三岔河口永乐桥',
+        '意大利风情街': '天津市河北区自由道意大利风情区',
+        '天津博物馆': '天津市河西区平江道62号',
+        '天津自然博物馆': '天津市河西区友谊路31号',
+        '天津科技馆': '天津市河西区隆昌路94号',
+        '水上公园': '天津市南开区水上公园北路33号',
+        '天津动物园': '天津市南开区水上公园东路',
+        '国家海洋博物馆': '天津市滨海新区中新生态城海轩道377号',
+        '天津海昌极地海洋公园': '天津市滨海新区响螺湾中心商务区',
+        '周恩来邓颖超纪念馆': '天津市南开区水上公园西路9号',
+        '滨海国际机场': '天津市东丽区滨海国际机场',
+        '五大道': '天津市和平区成都道',
+        '瓷房子': '天津市和平区赤峰道72号',
+        '天津图书馆(滨海新区)': '天津市滨海新区中心商务区文化中心',
+        '津湾广场': '天津市和平区解放北路津湾广场'
+      };
+
+      var placeTips = {
+        '天津站': '高铁/普速枢纽，地铁2、3、9号线天津站。抵津后乘地铁或打车至酒店。',
+        '汉庭酒店(天津海光寺地铁站店)': '近地铁1号线海光寺站（约250米），12:00 后可办理入住，可先寄存行李。',
+        '天津古文化街': '津门故里，泥人张、杨柳青年画、耳朵眼炸糕等，适合带娃逛 1–2 小时，街区免费预约。',
+        '天津之眼': '摩天轮地标，约 30 分钟一圈；1.2 米以下儿童免票（须成人陪同），建议傍晚或夜景。',
+        '意大利风情街': '欧式建筑、西餐与酒吧，适合散步拍照，约 1 小时。',
+        '天津博物馆': '免费预约，常设展与临展，建议 2 小时；与自然博物馆相邻可同天安排。',
+        '天津自然博物馆': '恐龙与自然标本，儿童友好，建议 2 小时；需预约，周一闭馆。',
+        '天津科技馆': '互动展项多，适合亲子，建议 2–3 小时；需预约。',
+        '水上公园': '免费公园，可划船、散步，与动物园相邻，适合半天户外。',
+        '天津动物园': '动物种类多，四岁娃喜欢，建议 2–3 小时；与水上公园可同天安排。',
+        '国家海洋博物馆': '滨海新区，海洋主题大馆，儿童体验好，建议半天；需提前预约，周一闭馆。',
+        '天津海昌极地海洋公园': '极地动物与海洋馆，亲子热门，建议 3–4 小时；在滨海，可与海洋博物馆分日。',
+        '周恩来邓颖超纪念馆': '免费预约，红色教育，约 1–1.5 小时；近水上公园。',
+        '滨海国际机场': '乘地铁 2 号线直达；22 日中午航班建议提前约 2 小时到机场。',
+        '五大道': '历史风貌建筑，可骑车或步行，约 1–2 小时。',
+        '瓷房子': '瓷片建筑，外观独特，参观约 30 分钟。',
+        '天津图书馆(滨海新区)': '滨海文化中心，建筑有特色，可顺路参观。',
+        '津湾广场': '海河畔，夜景好，近天津站。'
+      };
+
+      var placeHours = {
+        '天津古文化街': '街区约 9:00–21:00；天后宫 8:30–17:00。',
+        '天津之眼': '通常 9:30–21:30（以当日公示为准）。',
+        '意大利风情街': '街区全天，商铺各自营业。',
+        '天津博物馆': '9:00–16:30（16:00 停入），周一闭馆。',
+        '天津自然博物馆': '9:00–16:30（16:00 停入），周一闭馆。',
+        '天津科技馆': '9:00–16:30，周一闭馆。',
+        '水上公园': '全天开放。',
+        '天津动物园': '约 8:30–17:00，以公示为准。',
+        '国家海洋博物馆': '周二–五 9:00–17:00，周六日 9:00–18:00，周一闭馆。',
+        '天津海昌极地海洋公园': '约 9:00–17:00，以公示为准。',
+        '周恩来邓颖超纪念馆': '9:00–16:30，周一闭馆。'
+      };
+
+      var placeChildBooking = {
+        '天津古文化街': '免费预约，儿童随成人即可；美团搜「天津古文化街」预约。',
+        '天津之眼': '1.2 米以下免票，须成人陪同；现场或官方渠道购票。',
+        '天津博物馆': '免费预约，儿童可随成人预约入馆，以馆方为准。',
+        '天津自然博物馆': '需预约，每单可约 6 人（含 2 名儿童），公众号/官网预约。',
+        '天津科技馆': '需预约，儿童政策以馆方公示为准。',
+        '天津动物园': '一般 1.2 米以下免票，以现场为准。',
+        '国家海洋博物馆': '免费预约；1.3 米以下儿童凭家长预约信息入馆，每名成人最多带 2 名儿童。',
+        '天津海昌极地海洋公园': '一般 1.2 米以下免票或优惠，以现场/官网为准。',
+        '周恩来邓颖超纪念馆': '免费预约，儿童随成人入馆。'
+      };
+
+      var placeBooking = {
+        '天津古文化街': { days: 0, time: null },
+        '天津博物馆': { days: 7, time: '0:00' },
+        '天津自然博物馆': { days: 7, time: '0:00' },
+        '天津科技馆': { days: 7, time: '0:00' },
+        '国家海洋博物馆': { days: 7, time: '7:30' },
+        '周恩来邓颖超纪念馆': { days: 3, time: '0:00' }
+      };
+
+      var itineraryYear = 2026;
+
+      var itineraryDays = [
+        {
+          title: '2月18日（周三）抵津日 · 天津站→酒店',
+          note: '14:00 抵天津站，地铁或打车至汉庭海光寺店入住；下午休息或酒店周边轻逛，为次日蓄力。',
+          segments: [
+            { time: '14:00', from: '天津站', to: '汉庭酒店(天津海光寺地铁站店)', taxiKm: 5, taxiMin: 18, visit: null, dining: null, label: '抵天津站，地铁 3 号线→营口道换 1 号线→海光寺（约 25 分钟）；或打车约 5 km' },
+            { time: '15:00', from: null, to: '汉庭酒店(天津海光寺地铁站店)', taxiKm: null, taxiMin: null, visit: null, dining: null, label: '办理入住；下午休息或酒店周边（万德庄、南开大学附近）' },
+            { time: '18:00 后', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '万德庄/海光寺：津味简餐（狗不理、老胜香包子、煎饼果子）；或（津味典藏）、（耳朵眼会馆）等老字号，娃可吃包子、粥、软饼。', label: '晚餐' }
+          ]
+        },
+        {
+          title: '2月19日（周四）古文化街 + 天津之眼',
+          note: '上午古文化街（泥人张、年画、耳朵眼炸糕），下午午休后傍晚天津之眼，一日两站、节奏轻松。',
+          segments: [
+            { time: '9:30', from: '汉庭酒店(天津海光寺地铁站店)', to: '天津古文化街', taxiKm: 4, taxiMin: 15, visit: '约 1.5–2 小时', dining: null, label: '地铁 1 号线海光寺→西北角换 2 号线→东南角 D 口出步行约 5 分钟；或打车' },
+            { time: '12:00', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '古文化街：（耳朵眼炸糕）（娃可少吃）、（狗不理古文化街店）、（老字号茶汤）；或附近（津菜典藏）、（红旗饭庄）津菜。', label: '午餐' },
+            { time: '14:00', from: '天津古文化街', to: '汉庭酒店(天津海光寺地铁站店)', taxiKm: 4, taxiMin: 15, visit: null, dining: null, label: '回酒店午睡' },
+            { time: '16:30', from: '汉庭酒店(天津海光寺地铁站店)', to: '天津之眼', taxiKm: 6, taxiMin: 20, visit: '约 30 分钟一圈', dining: null, label: '地铁 1 号线→西南角换 2 号线→天津站 步行至摩天轮；或打车' },
+            { time: '18:00 后', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '意风区/大悲院附近：（成桂西餐厅）、（娜娜家）等；或回海光寺/万德庄津味、简餐。', label: '晚餐' }
+          ]
+        },
+        {
+          title: '2月20日（周五）自然博物馆 + 博物馆',
+          note: '河西区两馆相邻：自然博物馆（恐龙、标本）+ 天津博物馆，适合亲子一日。',
+          segments: [
+            { time: '9:00', from: '汉庭酒店(天津海光寺地铁站店)', to: '天津自然博物馆', taxiKm: 8, taxiMin: 25, visit: '约 2 小时', dining: null, label: '地铁 1 号线→营口道换 3 号线→津湾广场换 6 号线→文化中心；或打车至友谊路' },
+            { time: '11:30', from: '天津自然博物馆', to: '天津博物馆', taxiKm: 0, taxiMin: 0, visit: '约 1.5 小时', dining: null, label: '两馆相邻，步行即可' },
+            { time: '13:00', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '文化中心周边：（津味典藏）、（大铁勺）；或商场简餐，娃可吃面、粥。', label: '午餐' },
+            { time: '14:30', from: '天津博物馆', to: '汉庭酒店(天津海光寺地铁站店)', taxiKm: 8, taxiMin: 25, visit: null, dining: '海光寺/万德庄：津味或家常菜，早点、包子、炒菜。', label: '回酒店休息，晚餐' }
+          ]
+        },
+        {
+          title: '2月21日（周六）滨海 · 国家海洋博物馆',
+          note: '滨海新区一日：国家海洋博物馆（免费预约），海洋主题大、儿童体验好；往返建议地铁+轻轨或打车。',
+          segments: [
+            { time: '8:30', from: '汉庭酒店(天津海光寺地铁站店)', to: '国家海洋博物馆', taxiKm: 55, taxiMin: 70, visit: '约 3–4 小时', dining: null, label: '地铁 1 号线→天津站换 9 号线至东海路再打车/公交；或市区打车约 55 km、约 70 分钟（带娃推荐打车）' },
+            { time: '12:30', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '馆内简餐或滨海生态城周边简餐；娃可带小零食、馆内餐厅。', label: '午餐' },
+            { time: '14:30', from: '国家海洋博物馆', to: '汉庭酒店(天津海光寺地铁站店)', taxiKm: 55, taxiMin: 70, visit: null, dining: null, label: '返程；傍晚回酒店休息' },
+            { time: '18:00 后', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: '万德庄/海光寺：津味老字号或烤鸭、家常菜，收尾可吃饺子、包子。', label: '晚餐' }
+          ]
+        },
+        {
+          title: '2月22日（周日）离津 · 滨海国际机场',
+          note: '上午退房，前往滨海国际机场乘中午航班返大连；建议提前约 2 小时到机场。',
+          segments: [
+            { time: '上午', from: null, to: null, taxiKm: null, taxiMin: null, visit: null, dining: null, label: '退房、整理行李' },
+            { time: '—', from: '汉庭酒店(天津海光寺地铁站店)', to: '滨海国际机场', taxiKm: 28, taxiMin: 45, visit: null, dining: '机场内简餐或提前在市区早餐；赶飞机可带便携点心。', label: '地铁 1 号线海光寺→西南角换 2 号线→滨海国际机场（约 50 分钟）；或打车约 28 km' }
+          ]
+        }
+      ];
+
+      var metroRoutes = {
+        '天津站|汉庭酒店(天津海光寺地铁站店)': { route: '3号线 天津站 → 营口道换1号线(步行约200m) → 海光寺站(B口出，步行约250m至酒店)', fromWalk: 300, toWalk: 250, transferWalks: [200], note: '约 25 分钟。' },
+        '汉庭酒店(天津海光寺地铁站店)|天津古文化街': { route: '1号线 海光寺 → 西北角换2号线(步行约150m) → 东南角站(D口出，步行约400m)', fromWalk: 250, toWalk: 400, transferWalks: [150], note: '' },
+        '天津古文化街|汉庭酒店(天津海光寺地铁站店)': { route: '2号线 东南角 → 西北角换1号线(步行约150m) → 海光寺站', fromWalk: 400, toWalk: 250, transferWalks: [150], note: '' },
+        '汉庭酒店(天津海光寺地铁站店)|天津之眼': { route: '1号线 海光寺 → 西南角换2号线 → 天津站(步行约1km至摩天轮)', fromWalk: 250, toWalk: 1000, transferWalks: [200], note: '或 2 号线 东南角 更近摩天轮，视出发地。' },
+        '汉庭酒店(天津海光寺地铁站店)|天津自然博物馆': { route: '1号线 海光寺 → 营口道换3号线 → 津湾广场换6号线 → 文化中心站(步行约600m)', fromWalk: 250, toWalk: 600, transferWalks: [200, 150], note: '或打车约 8 km。' },
+        '天津自然博物馆|天津博物馆': { route: '步行 两馆相邻', fromWalk: 0, toWalk: 200, transferWalks: [], note: '' },
+        '汉庭酒店(天津海光寺地铁站店)|天津博物馆': { route: '同「酒店→自然博物馆」至文化中心，步行至博物馆', fromWalk: 250, toWalk: 600, transferWalks: [200, 150], note: '' },
+        '天津博物馆|汉庭酒店(天津海光寺地铁站店)': { route: '6号线 文化中心 → 津湾广场换3号线 → 营口道换1号线 → 海光寺', fromWalk: 600, toWalk: 250, transferWalks: [150, 200], note: '' },
+        '汉庭酒店(天津海光寺地铁站店)|国家海洋博物馆': { route: '1号线 海光寺 → 天津站换9号线(津滨轻轨) → 东海路站 后 公交/打车至海洋博物馆(约10km)', fromWalk: 250, toWalk: 0, transferWalks: [200], note: '带娃建议市区直接打车往返。' },
+        '国家海洋博物馆|汉庭酒店(天津海光寺地铁站店)': { route: '博物馆→东海路 打车/公交 → 9号线 → 天津站换1号线 → 海光寺', fromWalk: 0, toWalk: 250, transferWalks: [200], note: '' },
+        '汉庭酒店(天津海光寺地铁站店)|滨海国际机场': { route: '1号线 海光寺 → 西南角换2号线(步行约200m) → 滨海国际机场站', fromWalk: 250, toWalk: 400, transferWalks: [200], note: '约 50 分钟；2 号线直达机场。' },
+        '汉庭酒店(天津海光寺地铁站店)|水上公园': { route: '1号线 海光寺 → 鞍山道 或 二纬路 附近，打车约 3 km；或 3 号线 天塔站 步行约 1km', fromWalk: 250, toWalk: 1000, transferWalks: [], note: '' },
+        '汉庭酒店(天津海光寺地铁站店)|天津科技馆': { route: '1号线 → 营口道换3号线 → 津湾广场换6号线 → 乐园道/文化中心 附近步行', fromWalk: 250, toWalk: 600, transferWalks: [200, 150], note: '科技馆在河西隆昌路。' },
+        '汉庭酒店(天津海光寺地铁站店)|意大利风情街': { route: '1号线 海光寺 → 营口道换3号线 → 津湾广场站(步行约500m至意风区)', fromWalk: 250, toWalk: 500, transferWalks: [200], note: '' }
+      };
+
+      var placeStrollerAdvice = {
+        '天津古文化街': '街区石板路，可推车；店铺内较窄处可折叠。',
+        '天津之眼': '摩天轮舱内不推车，入口处可寄存或家人看管；建议轻便可折叠。',
+        '意大利风情街': '街区平坦，可推车散步。',
+        '天津自然博物馆': '馆内宽敞可推车，恐龙区娃会喜欢。',
+        '天津博物馆': '馆内可推车。',
+        '天津科技馆': '互动区多，可推车；部分体验区需陪同。',
+        '水上公园': '公园大，强烈建议推车。',
+        '天津动物园': '园内步行多，建议推车。',
+        '国家海洋博物馆': '馆大、步行多，建议推车；儿童体验区友好。',
+        '天津海昌极地海洋公园': '馆内可推车，排队处可折叠。',
+        '汉庭酒店(天津海光寺地铁站店)': '酒店距海光寺站约 250m，带推车方便往返地铁。',
+        '滨海国际机场': '机场内可推车，值机后可折叠携带。'
+      };
+
+      var map = null;
+      var markers = [];
+      var placeData = {};
+      var geocoder = null;
+      var routeOverlays = [];
+
+      function getDayPlaceNames(dayIndex) {
+        var day = itineraryDays[dayIndex];
+        if (!day || !day.segments) return [];
+        var set = {};
+        day.segments.forEach(function (s) {
+          if (s.from && placeData[s.from] && placeData[s.from].point) set[s.from] = true;
+          if (s.to && placeData[s.to] && placeData[s.to].point) set[s.to] = true;
+        });
+        return Object.keys(set);
+      }
+
+      function getDayPlaceOrder(dayIndex) {
+        var day = itineraryDays[dayIndex];
+        if (!day || !day.segments) return [];
+        var order = [];
+        var seen = {};
+        day.segments.forEach(function (s) {
+          if (s.from && placeData[s.from] && placeData[s.from].point && !seen[s.from]) { seen[s.from] = true; order.push(s.from); }
+          if (s.to && placeData[s.to] && placeData[s.to].point && !seen[s.to]) { seen[s.to] = true; order.push(s.to); }
+        });
+        return order;
+      }
+
+      function formatSeq(n) {
+        if (n >= 1 && n <= 20) return String.fromCharCode(0x2460 + n - 1);
+        return n + '.';
+      }
+
+      function setMarkerHighlightAndSeq(dayPlaceOrder) {
+        Object.keys(placeData).forEach(function (name) {
+          var m = placeData[name].marker;
+          if (!m) return;
+          var label = m.getLabel();
+          if (!label) return;
+          var contentToSet = placeData[name].labelContent;
+          var seq = 0;
+          if (dayPlaceOrder) {
+            var idx = dayPlaceOrder.indexOf(name);
+            if (idx !== -1) {
+              seq = idx + 1;
+              contentToSet = '<span class="bmap-marker-label-inner" data-place="' + escapeHtml(name) + '">' + formatSeq(seq) + ' ' + escapeHtml(name) + '</span>';
+            }
+          }
+          if (contentToSet) {
+            try {
+              if (label.setContent) label.setContent(contentToSet);
+              else if (label.setText) label.setText(contentToSet);
+              else {
+                var labelDiv = label.dom || label.ba || (label.getContainer && label.getContainer());
+                if (labelDiv && labelDiv.innerHTML !== undefined) labelDiv.innerHTML = contentToSet;
+              }
+            } catch (e) { }
+          }
+        });
+        var dayPlaceNames = dayPlaceOrder || [];
+        var mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        mapEl.querySelectorAll('[data-place]').forEach(function (el) {
+          var name = (el.getAttribute('data-place') || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+          var labelEl = el.closest ? el.closest('.bmap-marker-label') : (el.parentElement && el.parentElement.classList && el.parentElement.classList.contains('bmap-marker-label') ? el.parentElement : el);
+          if (!labelEl) labelEl = el.parentElement || el;
+          labelEl.classList.remove('bmap-marker-label-bounce');
+          if (dayPlaceNames.indexOf(name) !== -1) labelEl.classList.add('bmap-marker-label-bounce');
+        });
+      }
+
+      function clearRoute() {
+        routeOverlays.forEach(function (overlay) {
+          if (map && overlay) map.removeOverlay(overlay);
+        });
+        routeOverlays = [];
+        document.querySelectorAll('.day-block.route-active').forEach(function (el) { el.classList.remove('route-active'); });
+        setMarkerHighlightAndSeq(null);
+      }
+
+      function drawDayRoute(dayIndex) {
+        if (!map || typeof BMap === 'undefined') return;
+        var dayEl = document.querySelector('.day-block[data-day-index="' + dayIndex + '"]');
+        var alreadyActive = dayEl && dayEl.classList.contains('route-active');
+        if (alreadyActive) { clearRoute(); return; }
+        clearRoute();
+        var day = itineraryDays[dayIndex];
+        if (!day || !day.segments) return;
+        var dayPlaceOrder = getDayPlaceOrder(dayIndex);
+        setMarkerHighlightAndSeq(dayPlaceOrder);
+        var segmentsWithRoute = day.segments.filter(function (s) { return s.from && s.to && placeData[s.from] && placeData[s.from].point && placeData[s.to] && placeData[s.to].point; });
+        if (segmentsWithRoute.length === 0) {
+          if (dayPlaceOrder.length > 0) {
+            var points = dayPlaceOrder.map(function (n) { return placeData[n].point; });
+            map.setViewport(points);
+          }
+          if (dayEl) dayEl.classList.add('route-active');
+          return;
+        }
+        var idx = 0;
+        var allPoints = [];
+        function drawNext() {
+          if (idx >= segmentsWithRoute.length) {
+            if (allPoints.length > 0) map.setViewport(allPoints);
+            document.querySelectorAll('.day-block').forEach(function (el) {
+              if (parseInt(el.getAttribute('data-day-index'), 10) === dayIndex) el.classList.add('route-active');
+            });
+            return;
+          }
+          var seg = segmentsWithRoute[idx];
+          var startPoint = placeData[seg.from].point;
+          var endPoint = placeData[seg.to].point;
+          var dr = new BMap.DrivingRoute(map, {
+            onSearchComplete: function (results) {
+              if (dr.getStatus() === BMAP_STATUS_SUCCESS && results.getNumPlans() > 0) {
+                try {
+                  var plan = results.getPlan(0);
+                  var route = plan.getRoute(0);
+                  var path = route.getPath();
+                  if (path && path.length) {
+                    var polyline = new BMap.Polyline(path, { strokeColor: '#238636', strokeWeight: 5 });
+                    map.addOverlay(polyline);
+                    routeOverlays.push(polyline);
+                    allPoints = allPoints.concat(path);
+                  } else {
+                    allPoints.push(startPoint);
+                    allPoints.push(endPoint);
+                  }
+                } catch (e) { console.warn(e); }
+              }
+              idx++;
+              drawNext();
+            }
+          });
+          dr.search(startPoint, endPoint);
+        }
+        drawNext();
+      }
+
+      function getDayTaxiTotal(day) {
+        var km = 0, min = 0;
+        (day.segments || []).forEach(function (s) {
+          if (s.taxiKm != null && !isNaN(s.taxiKm)) km += s.taxiKm;
+          if (s.taxiMin != null && !isNaN(s.taxiMin)) min += s.taxiMin;
+        });
+        return { km: km, min: min };
+      }
+
+      function getSegmentStrollerAdvice(segment) {
+        var parts = [];
+        var venueAdvice = (segment.to && placeStrollerAdvice[segment.to]) ? placeStrollerAdvice[segment.to] : '';
+        if (venueAdvice) parts.push(venueAdvice);
+        if (segment.from && segment.to && venueAdvice.indexOf('若乘地铁') === -1 && venueAdvice.indexOf('若地铁') === -1) {
+          var routeKey = segment.from + '|' + segment.to;
+          var metro = metroRoutes[routeKey];
+          if (metro && (metro.fromWalk > 0 || metro.toWalk > 0)) {
+            var walkParts = [];
+            if (metro.fromWalk > 0) walkParts.push('起点步行约 ' + (metro.fromWalk >= 1000 ? (metro.fromWalk / 1000).toFixed(1) + 'km' : metro.fromWalk + 'm'));
+            if (metro.toWalk > 0) walkParts.push('终点步行约 ' + (metro.toWalk >= 1000 ? (metro.toWalk / 1000).toFixed(1) + 'km' : metro.toWalk + 'm'));
+            if (walkParts.length) parts.push('若乘地铁：' + walkParts.join('、') + '，带轻便推车更省力。');
+          }
+        }
+        return parts.length ? parts.join(' ') : null;
+      }
+
+      function getDayTaxiCostEst(day) {
+        var sum = 0;
+        (day.segments || []).forEach(function (s) {
+          var km = s.taxiKm != null && !isNaN(s.taxiKm) ? s.taxiKm : 0;
+          if (km <= 0) return;
+          var segCost = 14 + Math.max(0, km - 3) * 2.5;
+          sum += segCost;
+        });
+        return Math.round(sum / 10) * 10;
+      }
+
+      function renderItinerary() {
+        var totalCostEst = 0;
+        itineraryDays.forEach(function (day) { totalCostEst += getDayTaxiCostEst(day); });
+        var html = '';
+        if (totalCostEst > 0) {
+          html += '<div class="day-total-taxi" style="margin-bottom:14px;padding:10px 12px;background:rgba(35,134,54,0.15);border-radius:8px;border-left:4px solid #238636;">全程预估打车费合计：约 ' + totalCostEst + ' 元</div>';
+        }
+        itineraryDays.forEach(function (day, dayIndex) {
+          var total = getDayTaxiTotal(day);
+          var costEst = getDayTaxiCostEst(day);
+          html += '<div class="day-block" data-day-index="' + dayIndex + '"><h3>' + escapeHtml(day.title) + '</h3>';
+          if (total.km > 0 || total.min > 0) {
+            html += '<div class="day-total-taxi">本日打车合计：约 ' + total.km + ' 公里 / 约 ' + total.min + ' 分钟';
+            if (costEst > 0) html += ' · 预估打车费约 ' + costEst + ' 元';
+            html += '</div>';
+          }
+          html += '<p class="day-route-hint">点击在地图显示本日路线</p>';
+          if (day.note) html += '<p class="day-note" style="font-size:0.8rem;color:#6e7681;margin-bottom:10px;">' + escapeHtml(day.note) + '</p>';
+          day.segments.forEach(function (s) {
+            html += '<div class="segment">';
+            html += '<div><span class="time">' + escapeHtml(s.time) + '</span> ' + escapeHtml(s.label) + '</div>';
+            if (s.from && s.to && (s.taxiKm > 0 || s.taxiMin > 0)) {
+              html += '<div class="segment-taxi">' + s.from + ' → ' + s.to + '：约 ' + s.taxiKm + ' 公里 / 约 ' + s.taxiMin + ' 分钟</div>';
+            }
+            if (s.visit) html += '<div class="segment-visit">游玩时长：' + escapeHtml(s.visit) + '</div>';
+            if (s.dining) html += '<div class="segment-dining">附近就餐：' + escapeHtml(s.dining) + '</div>';
+            var strollerAdvice = getSegmentStrollerAdvice(s);
+            if (strollerAdvice) html += '<div class="segment-stroller"><strong>带娃建议：</strong>' + escapeHtml(strollerAdvice) + '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+        });
+        var el = document.getElementById('itineraryContent');
+        if (el) {
+          el.innerHTML = html;
+          el.querySelectorAll('.day-block').forEach(function (block) {
+            block.addEventListener('click', function () {
+              var i = parseInt(this.getAttribute('data-day-index'), 10);
+              if (!isNaN(i)) drawDayRoute(i);
+            });
+          });
+        }
+      }
+
+      function getDayTransitWalkTotal(day) {
+        var total = 0;
+        (day.segments || []).forEach(function (s) {
+          if (!s.from || !s.to) return;
+          var info = metroRoutes[s.from + '|' + s.to];
+          if (!info) return;
+          total += (info.fromWalk || 0) + (info.toWalk || 0);
+          if (info.transferWalks) info.transferWalks.forEach(function (w) { total += w; });
+        });
+        return total;
+      }
+
+      function formatWalkTotal(m) {
+        if (m >= 1000) return (m / 1000).toFixed(1) + ' 公里';
+        return m + ' 米';
+      }
+
+      function renderTransitPanel() {
+        var html = '';
+        itineraryDays.forEach(function (day, dayIndex) {
+          var segmentsWithRoute = (day.segments || []).filter(function (s) { return s.from && s.to; });
+          if (segmentsWithRoute.length === 0) {
+            html += '<div class="transit-day"><h3>' + escapeHtml(day.title) + '</h3><p class="transit-segment segment-note" style="margin:0;">本日无固定起止点行程。</p></div>';
+            return;
+          }
+          var dayWalkTotal = getDayTransitWalkTotal(day);
+          html += '<div class="transit-day"><h3>' + escapeHtml(day.title) + '</h3>';
+          if (dayWalkTotal > 0) {
+            html += '<div class="transit-day-total">本日公共交通步行合计：约 ' + formatWalkTotal(dayWalkTotal) + '</div>';
+          }
+          segmentsWithRoute.forEach(function (s) {
+            var key = s.from + '|' + s.to;
+            var info = metroRoutes[key];
+            var routeHtml = info ? info.route : '（暂无地铁方案，建议打车或查实时公交）';
+            var fromWalk = info && info.fromWalk ? '起点步行至地铁约' + info.fromWalk + 'm' : '';
+            var toWalk = info && info.toWalk ? '终点出站步行约' + info.toWalk + 'm' : '';
+            var transferStr = info && info.transferWalks && info.transferWalks.length ? '换乘步行：' + info.transferWalks.join('m、') + 'm' : '';
+            html += '<div class="transit-segment">';
+            html += '<div class="segment-title">' + escapeHtml(s.time) + ' ' + s.from + ' → ' + s.to + '</div>';
+            html += '<div class="segment-route">' + escapeHtml(routeHtml).replace(/(步行约\d+m|约\d+km)/g, '<span class="walk">$1</span>').replace(/换乘?\(步行[^)]+\)/g, '<span class="transfer">$&</span>').replace(/\d+号线/g, '<span class="line">$&</span>') + '</div>';
+            if (fromWalk || toWalk || transferStr) {
+              html += '<div class="segment-note">' + [fromWalk, toWalk, transferStr].filter(Boolean).join('；') + '</div>';
+            }
+            if (info && info.note) html += '<div class="segment-note">' + escapeHtml(info.note) + '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+        });
+        var el = document.getElementById('transitContent');
+        if (el) el.innerHTML = html;
+      }
+
+      function getPlaceVisitDate(placeName) {
+        for (var i = 0; i < itineraryDays.length; i++) {
+          var day = itineraryDays[i];
+          var visitDate = getDayDate(day.title);
+          if (!visitDate) continue;
+          for (var j = 0; j < (day.segments || []).length; j++) {
+            if (day.segments[j].to === placeName) return visitDate;
+          }
+        }
+        return null;
+      }
+
+      function getDayDate(dayTitle) {
+        var m = (dayTitle || '').match(/(\d+)月(\d+)日/);
+        if (!m) return null;
+        var month = parseInt(m[1], 10);
+        var day = parseInt(m[2], 10);
+        var d = new Date(itineraryYear, month - 1, day);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      function getPlaceBookDate(placeName) {
+        var visitDate = getPlaceVisitDate(placeName);
+        if (!visitDate) return null;
+        var days = placeBooking[placeName] && placeBooking[placeName].days;
+        if (days == null || days === 0) return null;
+        var bookDate = new Date(visitDate.getTime());
+        bookDate.setDate(bookDate.getDate() - days);
+        return bookDate;
+      }
+
+      function getPlaceBookDateStr(placeName) {
+        var d = getPlaceBookDate(placeName);
+        if (!d) return null;
+        var dateStr = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+        var timeStr = placeBooking[placeName] && placeBooking[placeName].time;
+        if (timeStr) return dateStr + ' ' + timeStr + ' 开放预约';
+        return dateStr;
+      }
+
+      function parseTimeToMs(timeStr) {
+        if (!timeStr) return 0;
+        var m = String(timeStr).match(/^(\d+):(\d+)$/);
+        if (!m) return 0;
+        return (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) * 60 * 1000;
+      }
+
+      function getPlacesSortedByBookDate() {
+        return places.slice().sort(function (a, b) {
+          var da = getPlaceBookDate(a);
+          var db = getPlaceBookDate(b);
+          if (da && db) {
+            var ta = da.getTime() + parseTimeToMs(placeBooking[a] && placeBooking[a].time);
+            var tb = db.getTime() + parseTimeToMs(placeBooking[b] && placeBooking[b].time);
+            return ta - tb;
+          }
+          if (da) return -1;
+          if (db) return 1;
+          var va = getPlaceVisitDate(a);
+          var vb = getPlaceVisitDate(b);
+          if (va && vb) return va.getTime() - vb.getTime();
+          if (va) return -1;
+          if (vb) return 1;
+          return (a || '').localeCompare(b || '');
+        });
+      }
+
+      function renderList() {
+        var html = '';
+        var sortedPlaces = getPlacesSortedByBookDate();
+        sortedPlaces.forEach(function (name) {
+          var addrHtml = placeAddresses[name] ? '<div class="address">' + escapeHtml(placeAddresses[name]) + '</div>' : '';
+          var tipHtml = placeTips[name] ? '<div class="tip">' + escapeHtml(placeTips[name]) + '</div>' : '';
+          var childHtml = placeChildBooking[name] ? '<div class="child-booking"><strong>四岁儿童预约：</strong>' + escapeHtml(placeChildBooking[name]) + '</div>' : '';
+          var bookStr = getPlaceBookDateStr(name);
+          var bookHtml = bookStr ? '<div class="book-date"><strong>预约日期：</strong>' + escapeHtml(bookStr) + '</div>' : '';
+          html += '<div class="place-card" data-name="' + escapeHtml(name) + '">' +
+            '<div class="name">' + escapeHtml(name) + '</div>' +
+            (bookHtml || '') +
+            (addrHtml || '') +
+            (childHtml || '') +
+            (tipHtml || '') +
+            '</div>';
+        });
+        document.getElementById('placeList').innerHTML = html;
+        bindListClick();
+      }
+
+      function renderBackupList() {
+        var html = '';
+        optionalPlaces.forEach(function (name) {
+          var addrHtml = placeAddresses[name] ? '<div class="address">' + escapeHtml(placeAddresses[name]) + '</div>' : '';
+          var tipHtml = placeTips[name] ? '<div class="tip">' + escapeHtml(placeTips[name]) + '</div>' : '';
+          var childHtml = placeChildBooking[name] ? '<div class="child-booking"><strong>四岁儿童预约：</strong>' + escapeHtml(placeChildBooking[name]) + '</div>' : '';
+          html += '<div class="place-card" data-name="' + escapeHtml(name) + '">' +
+            '<div class="name">' + escapeHtml(name) + '</div>' +
+            (addrHtml || '') +
+            (childHtml || '') +
+            (tipHtml || '') +
+            '</div>';
+        });
+        document.getElementById('backupList').innerHTML = html;
+        bindListClick();
+      }
+
+      function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function bindListClick() {
+        document.querySelectorAll('.place-card').forEach(function (card) {
+          card.addEventListener('click', function () {
+            var name = this.getAttribute('data-name');
+            name = unescapeHtml(name);
+            var data = placeData[name];
+            if (data && data.point && map) {
+              map.setCenter(data.point);
+              map.setZoom(15);
+            }
+            document.querySelectorAll('.place-card').forEach(function (c) { c.classList.remove('highlight'); });
+            this.classList.add('highlight');
+          });
+        });
+      }
+
+      function unescapeHtml(s) {
+        var div = document.createElement('div');
+        div.innerHTML = s;
+        return div.textContent || s;
+      }
+
+      function addMarker(name, point) {
+        var labelContent = '<span class="bmap-marker-label-inner" data-place="' + escapeHtml(name) + '">' + escapeHtml(name) + '</span>';
+        placeData[name] = { point: point, labelContent: labelContent };
+        var marker = new BMap.Marker(point);
+        var label = new BMap.Label(labelContent, {
+          offset: new BMap.Size(0, -18),
+          className: 'bmap-marker-label'
+        });
+        marker.setLabel(label);
+        marker.addEventListener('click', function () {
+          map.setCenter(point);
+          map.setZoom(15);
+        });
+        map.addOverlay(marker);
+        placeData[name].marker = marker;
+        markers.push(marker);
+      }
+
+      function initMap() {
+        map = new BMap.Map('map');
+        map.centerAndZoom(new BMap.Point(117.2, 39.13), 12);
+        map.enableScrollWheelZoom(true);
+        geocoder = new BMap.Geocoder();
+
+        var allPlaces = places.concat(optionalPlaces);
+        var done = 0;
+        function checkDone() {
+          done++;
+          if (done === allPlaces.length) {
+            renderList();
+            renderBackupList();
+            fitBounds();
+          }
+        }
+
+        allPlaces.forEach(function (name) {
+          var addr = placeAddresses[name];
+          if (addr) {
+            geocoder.getPoint(addr, function (point) {
+              if (point) {
+                addMarker(name, point);
+              } else {
+                searchByName(name, checkDone);
+                return;
+              }
+              checkDone();
+            }, '天津市');
+          } else {
+            searchByName(name, checkDone);
+          }
+        });
+      }
+
+      function searchByName(name, doneCallback) {
+        var local = new BMap.LocalSearch('天津市', {
+          onSearchComplete: function (results) {
+            if (local.getStatus() === BMAP_STATUS_SUCCESS && results.getCurrentNumPois() > 0) {
+              var poi = results.getPoi(0);
+              addMarker(name, poi.point);
+            } else {
+              placeData[name] = {};
+            }
+            doneCallback();
+          }
+        });
+        local.search(name);
+      }
+
+      function fitBounds() {
+        var points = [];
+        places.concat(optionalPlaces).forEach(function (name) {
+          if (placeData[name] && placeData[name].point) points.push(placeData[name].point);
+        });
+        if (points.length && map) map.setViewport(points);
+      }
+
+      function loadBaiduMapAndInit() {
+        if (typeof BMap !== 'undefined') {
+          initMap();
+          return;
+        }
+        window.onBaiduMapReady = function () {
+          initMap();
+        };
+        var script = document.createElement('script');
+        script.src = 'https://api.map.baidu.com/api?v=3.0&ak=' + encodeURIComponent(BAIDU_AK) + '&callback=onBaiduMapReady';
+        script.onerror = function () {
+          document.getElementById('placeList').innerHTML = '<div class="api-hint">地图加载失败，请检查百度 AK 是否正确配置。</div>';
+        };
+        document.head.appendChild(script);
+      }
+
+      document.querySelectorAll('.tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.tab').forEach(function (b) { b.classList.remove('active'); });
+          this.classList.add('active');
+          var tab = this.getAttribute('data-tab');
+          document.getElementById('listPanel').style.display = tab === 'list' ? 'block' : 'none';
+          document.getElementById('itineraryPanel').style.display = tab === 'itinerary' ? 'block' : 'none';
+          document.getElementById('transitPanel').style.display = tab === 'transit' ? 'block' : 'none';
+          document.getElementById('backupPanel').style.display = tab === 'backup' ? 'block' : 'none';
+        });
+      });
+
+      renderItinerary();
+      renderTransitPanel();
+
+      if (BAIDU_AK && BAIDU_AK.indexOf('替换') === -1) {
+        loadBaiduMapAndInit();
+      } else {
+        document.getElementById('placeList').innerHTML = '<div class="api-hint">请在页面顶部 &lt;script&gt; 中填写百度地图 AK 后刷新页面。<br><a href="https://lbs.baidu.com/apiconsole/key" target="_blank">百度地图开放平台申请 AK</a></div>';
+      }
+    })();
+  </script>
+</body>
+
+</html>
