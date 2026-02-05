@@ -167,6 +167,18 @@
       border-left: 2px solid #238636;
     }
 
+    .place-card .booked-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+      background: #238636;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
     .itinerary-section {
       display: none;
     }
@@ -744,6 +756,11 @@
         '北京公交馆': '需关注开放日及儿童入馆政策，以馆方公示为准。'
       };
 
+      // 已预约场馆（在景点列表中显示「已预约」标记）
+      var placeBooked = {
+        '中国人民革命军事博物馆': true
+      };
+
       // 各场馆预约配置：提前天数（游玩日前 N 天开放预约；0 表示无需提前预约）、预约开放时间（当日几点放票）
       var placeBooking = {
         "天安门广场": { days: 9, time: "12:00" },
@@ -1316,8 +1333,9 @@
           var childHtml = placeChildBooking[name] ? '<div class="child-booking"><strong>四岁儿童预约：</strong>' + escapeHtml(placeChildBooking[name]) + '</div>' : '';
           var bookStr = getPlaceBookDateStr(name);
           var bookHtml = bookStr ? '<div class="book-date"><strong>预约日期：</strong>' + escapeHtml(bookStr) + '</div>' : '';
+          var bookedBadge = placeBooked[name] ? '<span class="booked-badge">已预约</span>' : '';
           html += '<div class="place-card" data-name="' + escapeHtml(name) + '">' +
-            '<div class="name">' + escapeHtml(name) + '</div>' +
+            '<div class="name">' + escapeHtml(name) + bookedBadge + '</div>' +
             (bookHtml || '') +
             (addrHtml || '') +
             (childHtml || '') +
