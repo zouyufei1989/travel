@@ -566,10 +566,87 @@
     .bmap-marker-label-bounce {
       animation: marker-bounce 0.7s ease-in-out infinite !important;
     }
+
+    .view-booking-link {
+      font-size: 0.8rem;
+      color: #58a6ff;
+      margin-left: 8px;
+      text-decoration: none;
+    }
+    .view-booking-link:hover { text-decoration: underline; }
+    /* 行程中的查看预约：更醒目 */
+    .segment-booking-links { margin-top: 8px; }
+    .segment-booking-links .view-booking-link {
+      display: inline-block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      background: #238636;
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin: 4px 8px 4px 0;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .segment-booking-links .view-booking-link:hover {
+      background: #2ea043;
+      text-decoration: none;
+    }
+
+    .booking-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .booking-modal-overlay.show { display: flex; }
+    .booking-modal-box {
+      max-width: 95vw;
+      max-height: 90vh;
+      background: #161b22;
+      border-radius: 12px;
+      border: 1px solid #30363d;
+      overflow: hidden;
+      position: relative;
+    }
+    .booking-modal-box img { display: block; max-width: 100%; max-height: 85vh; width: auto; height: auto; }
+    .booking-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 1.25rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .booking-modal-close:hover { background: rgba(0,0,0,0.8); }
+    .booking-modal-title {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      color: #8b949e;
+      border-bottom: 1px solid #30363d;
+    }
   </style>
 </head>
 
 <body>
+  <div id="bookingModal" class="booking-modal-overlay" role="dialog" aria-label="预约信息">
+    <div class="booking-modal-box">
+      <button type="button" class="booking-modal-close" aria-label="关闭">&times;</button>
+      <div class="booking-modal-title" id="bookingModalTitle">预约信息</div>
+      <img id="bookingModalImg" src="" alt="预约信息截图" />
+    </div>
+  </div>
   <div class="app">
     <div class="map-wrap">
       <div id="map"></div>
@@ -758,7 +835,15 @@
 
       // 已预约场馆（在景点列表中显示「已预约」标记）
       var placeBooked = {
-        '中国人民革命军事博物馆': true
+        '中国人民革命军事博物馆': true,
+        '中国航天博物馆': true,
+        '北京公交馆': true
+      };
+      // 已预约场馆对应的预约截图（文件名，与 HTML 同目录）
+      var placeBookingImages = {
+        '中国人民革命军事博物馆': '军事博物馆.jpg',
+        '中国航天博物馆': '中国航天博物馆.jpg',
+        '北京公交馆': '公交馆.jpg'
       };
 
       // 各场馆预约配置：提前天数（游玩日前 N 天开放预约；0 表示无需提前预约）、预约开放时间（当日几点放票）
@@ -1129,6 +1214,9 @@
           day.segments.forEach(function (s) {
             html += '<div class="segment">';
             html += '<div><span class="time">' + escapeHtml(s.time) + '</span> ' + escapeHtml(s.label) + '</div>';
+            var bookingLinks = [];
+            if (s.to && placeBooked[s.to] && placeBookingImages[s.to]) bookingLinks.push('<a href="#" class="view-booking-link" data-image="' + escapeHtml(placeBookingImages[s.to]) + '" data-title="' + escapeHtml(s.to) + '">' + escapeHtml(s.to) + ' 查看预约</a>');
+            if (bookingLinks.length) html += '<div class="segment-booking-links">' + bookingLinks.join(' ') + '</div>';
             if (s.from && s.to) {
               html += '<div class="segment-taxi">打车 ' + s.from + ' → ' + s.to + '：约 ' + s.taxiKm + ' 公里 / 约 ' + s.taxiMin + ' 分钟</div>';
             }
@@ -1334,8 +1422,9 @@
           var bookStr = getPlaceBookDateStr(name);
           var bookHtml = bookStr ? '<div class="book-date"><strong>预约日期：</strong>' + escapeHtml(bookStr) + '</div>' : '';
           var bookedBadge = placeBooked[name] ? '<span class="booked-badge">已预约</span>' : '';
+          var viewBookingLink = (placeBooked[name] && placeBookingImages[name]) ? ' <a href="#" class="view-booking-link" data-image="' + escapeHtml(placeBookingImages[name]) + '" data-title="' + escapeHtml(name) + '">查看预约</a>' : '';
           html += '<div class="place-card" data-name="' + escapeHtml(name) + '">' +
-            '<div class="name">' + escapeHtml(name) + bookedBadge + '</div>' +
+            '<div class="name">' + escapeHtml(name) + bookedBadge + viewBookingLink + '</div>' +
             (bookHtml || '') +
             (addrHtml || '') +
             (childHtml || '') +
@@ -1481,6 +1570,39 @@
           document.getElementById('placeList').innerHTML = '<div class="api-hint">地图加载失败，请检查百度 AK 是否正确配置。</div>';
         };
         document.head.appendChild(script);
+      }
+
+      function openBookingModal(imagePath, title) {
+        var modal = document.getElementById('bookingModal');
+        var img = document.getElementById('bookingModalImg');
+        var titleEl = document.getElementById('bookingModalTitle');
+        if (modal && img) {
+          img.src = imagePath;
+          img.alt = (title || '预约信息') + ' 截图';
+          if (titleEl) titleEl.textContent = title ? title + ' · 预约信息' : '预约信息';
+          modal.classList.add('show');
+        }
+      }
+      function closeBookingModal() {
+        var modal = document.getElementById('bookingModal');
+        var img = document.getElementById('bookingModalImg');
+        if (modal) modal.classList.remove('show');
+        if (img) img.src = '';
+      }
+      document.addEventListener('click', function (e) {
+        var link = e.target.closest && e.target.closest('.view-booking-link');
+        if (link) {
+          e.preventDefault();
+          var imagePath = link.getAttribute('data-image');
+          var title = link.getAttribute('data-title') || '';
+          if (imagePath) openBookingModal(imagePath, title);
+        }
+      });
+      var modalEl = document.getElementById('bookingModal');
+      if (modalEl) {
+        modalEl.addEventListener('click', function (e) { if (e.target === modalEl) closeBookingModal(); });
+        var closeBtn = modalEl.querySelector('.booking-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', closeBookingModal);
       }
 
       document.querySelectorAll('.tab').forEach(function (btn) {
